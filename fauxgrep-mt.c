@@ -51,7 +51,18 @@ int main(int argc, char * const *argv) {
     paths = &argv[2];
   }
 
-  assert(0); // Initialise the job queue and some worker threads here.
+  // Initialise the job queue and some worker threads here.
+  struct job_queue jq;
+  if (job_queue_init(&jq, 64) != 0) {
+    fprintf(stderr, "Failed to initialize job queue\n");
+    exit(1);
+  }
+
+  pthread_t workers[num_threads];
+
+  //for (int i = 0)
+  
+
 
   // FTS_LOGICAL = follow symbolic links
   // FTS_NOCHDIR = do not change the working directory of the process
