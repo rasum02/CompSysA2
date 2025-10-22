@@ -14,13 +14,62 @@
 
 #include "job_queue.h"
 
-pthread_mutex_t stdout_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-// err.h contains various nonstandard BSD extensions, but they are
-// very handy.
 #include <err.h>
 
 #include "histogram.h"
+
+static struct job_queue job_queue;
+
+int global_histogram[8] = { 0 };
+
+int global_bytes = 0;
+pthread_mutex_t histogram_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
+//Made a build for the worker
+void *worker_thread(void *arg) {
+  while (1) {
+      char *path;
+
+      //checks if there is any job available
+      if (job_queue_pop(&job_queue, (void**)&path) == -1) break;
+
+      int local_histogram[8] = {0};
+
+      //var to count local-bytes
+      int local_bytes = 0;
+
+      //checks if F is possible to read
+      FILE *f = fopen(path, "r");
+      if (!f) { warn("failed to open %s", path); free(path); continue; }
+
+      //counts bytes and saves how many bytes are counted
+      char c;
+      while (fread(&c, sizeof(c), 1, f) == 1) {
+          update_histogram(local_histogram, c);
+          local_bytes++;
+      }
+      fclose(f);
+
+
+      //locks to update a global variable in a thread-safe way
+      pthread_mutex_lock(&histogram_mutex);
+      merge_histogram(local_histogram, global_histogram);
+      global_bytes += local_bytes;
+
+      while (global_bytes >= 100000) {
+          print_histogram(global_histogram);
+          global_bytes -= 100000;
+      }
+
+      print_histogram(global_histogram);
+      pthread_mutex_unlock(&histogram_mutex);
+
+      free(path);
+  }
+}
+
+
 
 int main(int argc, char * const *argv) {
   if (argc < 2) {
@@ -49,7 +98,20 @@ int main(int argc, char * const *argv) {
     paths = &argv[1];
   }
 
-  assert(0); // Initialise the job queue and some worker threads here.
+
+  //initialise the job queue
+  if (job_queue_init(&job_queue, 64)!=0) {
+    fprintf(stderr,"failed to initialize job queue");
+    exit(1);
+  }
+
+  pthread_t *threads = malloc(num_threads * sizeof(pthread_t));
+
+  for (int i = 0; i < num_threads; i++) {
+      pthread_create(&threads[i], NULL, worker_thread, NULL);
+  }
+
+
 
   // FTS_LOGICAL = follow symbolic links
   // FTS_NOCHDIR = do not change the working directory of the process
@@ -69,9 +131,14 @@ int main(int argc, char * const *argv) {
     switch (p->fts_info) {
     case FTS_D:
       break;
-    case FTS_F:
-      assert(0); // Process the file p->fts_path, somehow.
+    case FTS_F: {
+      //saves the path, so it doesnt change when threading
+      char *path_copy = strdup(p->fts_path);
+
+      //pushes the job into the queue, for the workers to grab
+      job_queue_push(&job_queue,path_copy);
       break;
+    }
     default:
       break;
     }
@@ -79,7 +146,13 @@ int main(int argc, char * const *argv) {
 
   fts_close(ftsp);
 
-  assert(0); // Shut down the job queue and the worker threads here.
+  job_queue_destroy(&job_queue);
+
+  for (int i = 0; i <num_threads; i++){
+    pthread_join(threads[i], NULL);
+  }
+
+  free(threads);
 
   move_lines(9);
 

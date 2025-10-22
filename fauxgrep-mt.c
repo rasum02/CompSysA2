@@ -142,14 +142,14 @@ int main(int argc, char * const *argv) {
     switch (p->fts_info) {
     case FTS_D:
       break;
-    case FTS_F:
+    case FTS_F: {
       //saves the path, so it doesnt change when threading
       char *path_copy = strdup(p->fts_path);
 
       //pushes the job into the queue, for the workers to grab
       job_queue_push(&job_queue,path_copy);
       break;
-
+    }
     default:
       break;
     }
