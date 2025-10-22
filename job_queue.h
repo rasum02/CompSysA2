@@ -3,6 +3,11 @@
 
 #include <pthread.h>
 
+struct job {
+    char *path;
+    char *needle;
+};
+
 struct job_queue {
    int total_capacity; // hvor mange jobs der maks. kan ligge i køen
     int head; // hvor vi tager fra (dequeue)
