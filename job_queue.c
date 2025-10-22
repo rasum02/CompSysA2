@@ -79,7 +79,6 @@ int job_queue_destroy(struct job_queue *job_queue) {
     // Wake all waiting threads so they can exit
     pthread_cond_broadcast(&job_queue->not_empty);
     pthread_cond_broadcast(&job_queue->not_full);
-    pthread_cond_broadcast(&job_queue->destroyed);
 
     pthread_mutex_unlock(&job_queue->mutex);
 

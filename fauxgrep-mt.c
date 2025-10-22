@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <fts.h>
 
+
 // err.h contains various nonstandard BSD extensions, but they are
 // very handy.
 #include <err.h>
@@ -18,6 +19,62 @@
 #include <pthread.h>
 
 #include "job_queue.h"
+
+static struct job_queue job_queue;
+
+static const char *global_needle;
+
+int fauxgrep_file(char const *needle, char const *path) {
+  FILE *f = fopen(path, "r");
+
+  if (f == NULL) {
+    warn("failed to open %s", path);
+    return -1;
+  }
+
+  char *line = NULL;
+  size_t linelen = 0;
+  int lineno = 1;
+
+  while (getline(&line, &linelen, f) != -1) {
+    if (strstr(line, needle) != NULL) {
+      printf("%s:%d: %s", path, lineno, line);
+    }
+
+    lineno++;
+  }
+
+  free(line);
+  fclose(f);
+
+  return 0;
+}
+
+
+//Made a build for the worker
+void *worker_thread(void *arg){
+  (void)arg;
+
+  while (1) {
+
+    char *path;
+
+    //checks wether there is any jobs available 
+    if (job_queue_pop(&job_queue, (void**)&path)==-1){
+      break;
+    }
+
+    //reads file 
+    fauxgrep_file(global_needle, path);
+
+    //Frees saved memory for path
+    free(path);
+
+  }
+
+  return NULL;
+}
+
 
 int main(int argc, char * const *argv) {
   if (argc < 2) {
@@ -51,7 +108,21 @@ int main(int argc, char * const *argv) {
     paths = &argv[2];
   }
 
-  assert(0); // Initialise the job queue and some worker threads here.
+  global_needle = needle;
+
+  //initialise the job queue
+  if (job_queue_init(&job_queue, 64)!=0) {
+    fprintf(stderr,"failed to initialize job queue");
+    exit(1);
+  }
+
+  //initialise the workers
+  pthread_t *threads = malloc(num_threads * sizeof(pthread_t));
+
+  for (int i = 0; i < num_threads; i++) {
+      pthread_create(&threads[i], NULL, worker_thread, NULL);
+  }
+
 
   // FTS_LOGICAL = follow symbolic links
   // FTS_NOCHDIR = do not change the working directory of the process
@@ -72,8 +143,13 @@ int main(int argc, char * const *argv) {
     case FTS_D:
       break;
     case FTS_F:
-      assert(0); // Process the file p->fts_path, somehow.
+      //saves the path, so it doesnt change when threading
+      char *path_copy = strdup(p->fts_path);
+
+      //pushes the job into the queue, for the workers to grab
+      job_queue_push(&job_queue,path_copy);
       break;
+
     default:
       break;
     }
@@ -81,7 +157,14 @@ int main(int argc, char * const *argv) {
 
   fts_close(ftsp);
 
-  assert(0); // Shut down the job queue and the worker threads here.
+
+  job_queue_destroy(&job_queue);
+
+  for (int i = 0; i <num_threads; i++){
+    pthread_join(threads[i], NULL);
+  }
+
+  free(threads);
 
   return 0;
 }

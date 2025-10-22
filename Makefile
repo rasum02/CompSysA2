@@ -12,6 +12,7 @@ job_queue.o: job_queue.c job_queue.h
 %: %.c job_queue.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
+
 test: $(TESTS)
 	@set e; for test in $(TESTS); do echo ./$$test; ./$$test; done
 
