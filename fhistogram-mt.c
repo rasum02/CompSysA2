@@ -58,9 +58,9 @@ void *worker_thread(void *arg) {
       merge_histogram(local_histogram, global_histogram);
       global_bytes += local_bytes;
 
-      while (global_bytes >= 100000) {
+      while (global_bytes >= 1000000) {
           print_histogram(global_histogram);
-          global_bytes -= 100000;
+          global_bytes -= 1000000;
       }
 
       print_histogram(global_histogram);
