@@ -1,9 +1,9 @@
 #!/bin/bash
 mkdir -p test_dir
 mkdir -p big_test
-cp -r src_test/* big_test/
-cp -r src_test/* big_test/
-cp -r src_test/* big_test/
+cp -r src_test big_test/run1
+cp -r src_test big_test/run2
+cp -r src_test big_test/run3
 
 NUM_FILES=$(find ./big_test -type f | wc -l)
 TOTAL_BYTES=$(find ./big_test -type f -exec wc -c {} + | tail -n1 | awk '{print $1}')
