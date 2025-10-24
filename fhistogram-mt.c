@@ -28,6 +28,7 @@ pthread_mutex_t histogram_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //Made a build for the worker
 void *worker_thread(void *arg) {
+  (void)arg;  //for no warning
   while (1) {
       char *path;
 
@@ -67,6 +68,7 @@ void *worker_thread(void *arg) {
 
       free(path);
   }
+  return NULL;
 }
 
 

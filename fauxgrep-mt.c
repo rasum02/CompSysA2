@@ -53,7 +53,7 @@ int fauxgrep_file(char const *needle, char const *path) {
 
 //Made a build for the worker
 void *worker_thread(void *arg){
-  (void)arg;
+  (void)arg; 
 
   while (1) {
 
