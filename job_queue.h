@@ -3,17 +3,13 @@
 
 #include <pthread.h>
 
-struct job {
-    char *path;
-    char *needle;
-};
 
 struct job_queue {
    int total_capacity; // hvor mange jobs der maks. kan ligge i køen
     int head; // hvor vi tager fra (dequeue)
     int tail; // hvor vi lægger i (enqueue)
     int count; // hvor mange jobs der aktuelt ligger i køen
-    struct job **job;// array med pointere til jobs
+    void **job; 
     pthread_mutex_t mutex; // beskytter fælles data
     pthread_cond_t not_empty;// signaleres når der er mindst ét job
     pthread_cond_t not_full; // signaleres når der er plads igen
