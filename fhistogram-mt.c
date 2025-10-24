@@ -19,6 +19,7 @@
 #include "histogram.h"
 
 static struct job_queue job_queue;
+static long treeshold = 10000;
 
 int global_histogram[8] = { 0 };
 
@@ -38,7 +39,7 @@ void *worker_thread(void *arg) {
       int local_histogram[8] = {0};
 
       //var to count local-bytes
-      int local_bytes = 0;
+      long local_bytes = 0;
 
       //checks if F is possible to read
       FILE *f = fopen(path, "r");
@@ -58,12 +59,10 @@ void *worker_thread(void *arg) {
       merge_histogram(local_histogram, global_histogram);
       global_bytes += local_bytes;
 
-      while (global_bytes >= 1000000) {
+      while (global_bytes >= treeshold) {
           print_histogram(global_histogram);
-          global_bytes -= 1000000;
+          global_bytes -= treeshold;
       }
-
-      print_histogram(global_histogram);
       pthread_mutex_unlock(&histogram_mutex);
 
       free(path);
