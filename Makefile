@@ -30,7 +30,7 @@ valgrind: test_job_queue
 	valgrind --leak-check=full ./fauxgrep-mt -n 4 malloc src_test
 
 clean:
-	rm -rf $(TESTS) $(EXAMPLES) *.o core test_dir
+	rm -rf $(TESTS) $(EXAMPLES) *.o core test_dir big_test
 
 
 zip: ../src.zip
