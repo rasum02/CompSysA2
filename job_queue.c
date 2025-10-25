@@ -11,7 +11,7 @@ int job_queue_init(struct job_queue *job_queue, int capacity) {
     job_queue->head = 0;
     job_queue->tail = 0;
     job_queue->is_destroyed = 0;
-    job_queue->job = malloc(sizeof(void*) * capacity);
+    job_queue->job = malloc(sizeof(void*) * capacity); // For saving an array of pointers to the data in the queue
     if (!job_queue->job) return -1;
 
     pthread_mutex_init(&job_queue->mutex, NULL);
@@ -21,20 +21,22 @@ int job_queue_init(struct job_queue *job_queue, int capacity) {
 }
 
 int job_queue_push(struct job_queue *job_queue, void *data) {
-    pthread_mutex_lock(&job_queue->mutex);
+    pthread_mutex_lock(&job_queue->mutex); // Making sure nobody else can touch the queue
 
     // Wait if full
     while (job_queue->count == job_queue->total_capacity && !job_queue->is_destroyed) {
         pthread_cond_wait(&job_queue->not_full, &job_queue->mutex);
     }
 
+    // If is_destroyed is true, return -1
     if (job_queue->is_destroyed) {
         pthread_mutex_unlock(&job_queue->mutex);
         return -1;
     }
 
-    job_queue->job[job_queue->tail] = data;
-    job_queue->tail = (job_queue->tail + 1) % job_queue->total_capacity;
+
+    job_queue->job[job_queue->tail] = data; //giving the pointer to data
+    job_queue->tail = (job_queue->tail + 1) % job_queue->total_capacity; //circular
     job_queue->count++;
 
     pthread_cond_signal(&job_queue->not_empty);
@@ -43,7 +45,7 @@ int job_queue_push(struct job_queue *job_queue, void *data) {
 }
 
 int job_queue_pop(struct job_queue *job_queue, void **data) {
-    pthread_mutex_lock(&job_queue->mutex);
+    pthread_mutex_lock(&job_queue->mutex); // Making sure nobody else can touch the queue
 
     // Wait if empty
     while (job_queue->count == 0 && !job_queue->is_destroyed) {

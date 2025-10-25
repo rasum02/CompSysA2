@@ -38,6 +38,7 @@ int fauxgrep_file(char const *needle, char const *path) {
 
   while (getline(&line, &linelen, f) != -1) {
     if (strstr(line, needle) != NULL) {
+      //printing without interleaving
       pthread_mutex_lock(&print_mutex);
       printf("%s:%d: %s", path, lineno, line);
       pthread_mutex_unlock(&print_mutex);
@@ -161,6 +162,8 @@ int main(int argc, char * const *argv) {
 
   job_queue_destroy(&job_queue);
 
+
+  
   for (int i = 0; i <num_threads; i++){
     pthread_join(threads[i], NULL);
   }
