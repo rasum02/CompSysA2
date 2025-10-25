@@ -27,6 +27,7 @@ test_fauxgrep:
 	@stdbuf -oL ./test_fauxgrep.sh
 
 test_histogram:
+	@dos2unix test_histogram.sh
 	@echo "Running performance comparison..."
 	@chmod +x test_histogram.sh
 	@stdbuf -oL ./test_histogram.sh

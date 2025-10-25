@@ -20,11 +20,11 @@ TOTAL_BYTES=$(find ./big_test2 -type f -exec wc -c {} + | tail -n1 | awk '{print
 
 echo "Checking correctness (final histogram only)..."
 
-# Run single-threaded, capture only the last line
-./fhistogram ./big_test2 | tail -n 1 > test_dir2/single_final.txt
+# Run single-threaded, capture only the last histogram
+./fhistogram ./big_test2 | tail -n 10 > test_dir2/single_final.txt
 
-# Run multi-threaded, capture only the last line
-./fhistogram-mt -n 4 ./big_test2 | tail -n 1 > test_dir2/multi_final.txt
+# Run multi-threaded, capture only the last histogram
+./fhistogram-mt -n 4 ./big_test2 | tail -n 10 > test_dir2/multi_final.txt
 
 # Compare final outputs
 if diff test_dir2/single_final.txt test_dir2/multi_final.txt > /dev/null; then
