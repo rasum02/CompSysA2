@@ -59,9 +59,9 @@ void *worker_thread(void *arg) {
       merge_histogram(local_histogram, global_histogram);
       global_bytes += local_bytes;
 
-      while (global_bytes >= treeshold) {
+      while (global_bytes >= threshold) {
           print_histogram(global_histogram);
-          global_bytes -= treeshold;
+          global_bytes -= threshold;
       }
       pthread_mutex_unlock(&histogram_mutex);
 
