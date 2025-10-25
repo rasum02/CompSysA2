@@ -21,8 +21,8 @@
 #include "job_queue.h"
 
 static struct job_queue job_queue;
-
 static const char *global_needle;
+pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int fauxgrep_file(char const *needle, char const *path) {
   FILE *f = fopen(path, "r");
@@ -38,7 +38,9 @@ int fauxgrep_file(char const *needle, char const *path) {
 
   while (getline(&line, &linelen, f) != -1) {
     if (strstr(line, needle) != NULL) {
+      pthread_mutex_lock(&print_mutex);
       printf("%s:%d: %s", path, lineno, line);
+      pthread_mutex_unlock(&print_mutex);
     }
 
     lineno++;

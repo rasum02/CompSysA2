@@ -19,11 +19,11 @@
 #include "histogram.h"
 
 static struct job_queue job_queue;
-static long treeshold = 10000;
+static uint64_t threshold = 10000;
 
 int global_histogram[8] = { 0 };
+uint64_t global_bytes = 0;
 
-int global_bytes = 0;
 pthread_mutex_t histogram_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -39,7 +39,7 @@ void *worker_thread(void *arg) {
       int local_histogram[8] = {0};
 
       //var to count local-bytes
-      long local_bytes = 0;
+      uint64_t local_bytes = 0;
 
       //checks if F is possible to read
       FILE *f = fopen(path, "r");
