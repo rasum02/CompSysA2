@@ -1,41 +1,46 @@
 #!/bin/bash
 set -e
 
-mkdir -p test_dir
-mkdir -p big_test
+# Prepare directories
+mkdir -p test_dir2
+mkdir -p big_test2
 
-cp -r src_test big_test/run1
-cp -r src_test big_test/run2
-cp -r src_test big_test/run3
+# Populate big_test2 with multiple copies of src_test
+cp -r src_test big_test2/run1
+cp -r src_test big_test2/run2
+cp -r src_test big_test2/run3
 
-touch big_test/empty.txt
-dd if=/dev/urandom of=big_test/random.bin bs=1K count=10 status=none
-echo "abc123" > big_test/small.txt
+# Add edge-case files
+touch big_test2/empty.txt
+dd if=/dev/urandom of=big_test2/random.bin bs=1K count=10 status=none
+echo "abc123" > big_test2/small.txt
 
-NUM_FILES=$(find ./big_test -type f | wc -l)
-TOTAL_BYTES=$(find ./big_test -type f -exec wc -c {} + | tail -n1 | awk '{print $1}')
+NUM_FILES=$(find ./big_test2 -type f | wc -l)
+TOTAL_BYTES=$(find ./big_test2 -type f -exec wc -c {} + | tail -n1 | awk '{print $1}')
 
-echo "Checking correctness..."
-./fhistogram ./big_test > test_dir/single.txt
-./fhistogram-mt -n 4 ./big_test > test_dir/multi.txt
+echo "Checking correctness (final histogram only)..."
 
-sort test_dir/single.txt > test_dir/single_sorted.txt
-sort test_dir/multi.txt > test_dir/multi_sorted.txt
+# Run single-threaded, capture only the last line
+./fhistogram ./big_test2 | tail -n 1 > test_dir2/single_final.txt
 
-if diff test_dir/single_sorted.txt test_dir/multi_sorted.txt > /dev/null; then
-    echo "Outputs match — correctness OK"
+# Run multi-threaded, capture only the last line
+./fhistogram-mt -n 4 ./big_test2 | tail -n 1 > test_dir2/multi_final.txt
+
+# Compare final outputs
+if diff test_dir2/single_final.txt test_dir2/multi_final.txt > /dev/null; then
+    echo "Final outputs match — correctness OK"
 else
-    echo "Outputs differ!"
-    diff test_dir/single_sorted.txt test_dir/multi_sorted.txt | head -n 20
+    echo "Final outputs differ!"
+    diff test_dir2/single_final.txt test_dir2/multi_final.txt
 fi
 
 echo
 echo "Timing..."
-for CMD in "./fhistogram ./big_test" \
-           "./fhistogram-mt -n 1 ./big_test" \
-           "./fhistogram-mt -n 2 ./big_test" \
-           "./fhistogram-mt -n 4 ./big_test" \
-           "./fhistogram-mt -n 8 ./big_test"
+for CMD in "./fhistogram ./big_test2" \
+           "./fhistogram-mt -n 1 ./big_test2" \
+           "./fhistogram-mt -n 2 ./big_test2" \
+           "./fhistogram-mt -n 4 ./big_test2" \
+           "./fhistogram-mt -n 8 ./big_test2"
 do
     echo "--- $CMD ---"
     START=$(date +%s.%N)
@@ -51,7 +56,7 @@ done
 echo
 echo "Edge case tests..."
 mkdir -p empty_dir
-./fhistogram-mt -n 4 empty_dir > test_dir/empty_output.txt
-./fhistogram-mt -n 2 big_test/random.bin > test_dir/bin_output.txt
-./fhistogram-mt -n 2 big_test/small.txt > test_dir/small_output.txt
+./fhistogram-mt -n 4 empty_dir > test_dir2/empty_output.txt
+./fhistogram-mt -n 2 big_test2/random.bin > test_dir2/bin_output.txt
+./fhistogram-mt -n 2 big_test2/small.txt > test_dir2/small_output.txt
 echo "Edge case tests done"

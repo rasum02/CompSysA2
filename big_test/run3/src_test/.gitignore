@@ -1,7 +1,0 @@
-# gitignore everything with no extension or directories
-*
-!*/
-!*.*
-!Makefile
-
-*.o

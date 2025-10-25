@@ -14,23 +14,34 @@ job_queue.o: job_queue.c job_queue.h
 	$(CC) -o $@ $^ $(CFLAGS)
 
 
-test: $(TESTS)
+test_jq: $(TESTS)
 	@echo "Running unit tests..."
 	@set -e; for test in $(TESTS); do \
 		echo "Executing $$test..."; \
 		./$$test; \
 	done
+
+test_fauxgrep:
 	@echo "Running performance comparison..."
 	@chmod +x test_fauxgrep.sh
-	@./test_fauxgrep.sh
+	@stdbuf -oL ./test_fauxgrep.sh
+
+test_histogram:
+	@echo "Running performance comparison..."
+	@chmod +x test_histogram.sh
+	@stdbuf -oL ./test_histogram.sh
+
+test: test_jq test_fauxgrep test_histogram
 
 valgrind: test_job_queue
 	valgrind --leak-check=full ./test_job_queue
 	valgrind --leak-check=full ./fauxgrep malloc src_test
 	valgrind --leak-check=full ./fauxgrep-mt -n 4 malloc src_test
+	valgrind --leak-check=full ./fhistogram src_test
+	valgrind --leak-check=full ./fhistogram-mt -n 4 src_test
 
 clean:
-	rm -rf $(TESTS) $(EXAMPLES) *.o core test_dir big_test
+	rm -rf $(TESTS) $(EXAMPLES) *.o core test_dir test_dir2 big_test big_test2
 
 
 zip: ../src.zip
